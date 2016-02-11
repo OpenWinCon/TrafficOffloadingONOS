@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: kr.ac.postech.app.trafficMonTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 sec - in kr.ac.postech.app.trafficMonTest

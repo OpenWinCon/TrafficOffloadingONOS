@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_sdn_controlling" >
+        <EditTextPreference
+          android:key="recv_udp_port"
+          android:title="@string/pref_recv_udp_port"
+          android:inputType="numberDecimal"
+          android:summary="@string/pref_recv_udp_port_sum"
+          android:dialogTitle="@string/dialog_title_recv_udp_port" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_client_detection"
+            android:summary="@string/pref_client_detection_sum"
+            android:title="@string/pref_client_detection" />
+        
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_motion_detection"
+            android:summary="@string/pref_motion_detection_sum"
+            android:title="@string/pref_motion_detection" />
+        
+        <EditTextPreference
+          android:key="pref_downloading_url"
+          android:title="@string/pref_downloading_url"
+          android:inputType="text"
+          android:hint="@string/pref_downloading_url_hint"
+          android:summary="@string/pref_downloading_url_sum"
+          android:dialogTitle="@string/dialog_title_pref_downloading_url" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_wifi_scanning" >
+        <ListPreference
+            android:key="pref_wifi_scan_interval"
+            android:entries="@array/wifi_scan_interval"
+            android:summary="@string/pref_wifi_scan_interval_sum"
+            android:entryValues="@array/wifi_scan_interval_value"
+            android:title="@string/pref_wifi_scan_interval" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="pref_connecting_test"
+            android:summary="@string/pref_connecting_test_sum"
+            android:title="@string/pref_connecting_test" />
+
+        <ListPreference
+            android:key="pref_connecting_test_timeout"
+            android:entries="@array/connecting_test_timeout"
+            android:summary="@string/pref_connecting_test_timeout_sum"
+            android:entryValues="@array/connecting_test_timeout_value"
+            android:title="@string/pref_connecting_test_timeout" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
