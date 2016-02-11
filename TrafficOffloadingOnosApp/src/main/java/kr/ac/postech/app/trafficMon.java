@@ -53,7 +53,7 @@ public class trafficMon implements AppService, TrafficMonService {
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private ThreadPoolExecutor conExecutor ;
     private ConcurrentMap<String, Client> clientsMap; /*<switch(ap) <client, scan>*/
-    private ConcurrentMap<String, APAgent> DeviceAPMap; /*<DeviceId, BSSID(AP)>*/
+    private ConcurrentMap<String, AP> DeviceAPMap; /*<DeviceId, BSSID(AP)>*/
     DatagramSocket curControllerSocket=null;
 
     
@@ -71,20 +71,20 @@ public class trafficMon implements AppService, TrafficMonService {
 
         deviceService.addListener(new InnerDeviceListener());
         clientsMap = new ConcurrentHashMap<String, Client>();
-        DeviceAPMap = new ConcurrentHashMap<String, APAgent>();
+        DeviceAPMap = new ConcurrentHashMap<String, AP>();
         
     	enrollAP();
         System.out.println("device number: " + deviceService.getDeviceCount());
         executor.scheduleAtFixedRate(this::trafficMonitoring, 10, 10, TimeUnit.SECONDS); 
         
         conExecutor= (ThreadPoolExecutor)Executors.newCachedThreadPool();//newFixedThreadPool(20);
-        conExecutor.execute(new APManager(this, 1622, conExecutor));
+        conExecutor.execute(new ConListener(this, 1622, conExecutor));
     }
     @Deactivate
     protected void deactivate() {
         log.info("Stopped");
         executor.shutdown();
-        if(curControllerSocket!=null)
+        if(curControllerSocket!=null&&curControllerSocket.isClosed()==false)
         	curControllerSocket.close();
         conExecutor.shutdown();
         
@@ -125,14 +125,14 @@ public class trafficMon implements AppService, TrafficMonService {
     {
     	String device1="of:0000b827ebf0fd40";
     	String device2="of:0000b827eb248291";
-    	DeviceAPMap.put(device1, new APAgent(device1, "OPENWINCON","00:26:66:4e:df:b5", (long)0) );
-    	DeviceAPMap.put(device2, new APAgent(device1, "MCNLONOS","00:26:66:42:4a:a5",(long)0) );
+    	DeviceAPMap.put(device1, new AP(device1, "OPENWINCON","00:26:66:4e:df:b5", (long)0) );
+    	DeviceAPMap.put(device2, new AP(device1, "MCNLONOS","00:26:66:42:4a:a5",(long)0) );
     }
     private void TrafficMonSwitchAP()
     {
     	log.info("Start TrafficMonSwitchAP()");
-    	APAgent canAPAgent=null;
-    	APAgent curAPAgent=null;
+    	AP canAPAgent=null;
+    	AP curAPAgent=null;
     	//find target AP that have less traffic than cacacity
 		for (String deviceId : DeviceAPMap.keySet()) {  //find candidate AP
 			curAPAgent = DeviceAPMap.get(deviceId);
