@@ -19,28 +19,25 @@
 		android:visibility="gone" /> 
 
    <Switch
-        android:id="@+id/switch_sdn"
-        style="?android:attr/listSeparatorTextViewStyle"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_below="@id/introduction"
-        android:layout_margin="10sp"
-        android:checked="true"
-        android:onClick="onSwitchSDNClicked"
-        android:switchTextAppearance="@style/SwitchTextAppearance"
-        android:text="@string/sdn_control_switch_message"
-        android:textColor="@android:color/black"
-        android:thumb="@drawable/custom_switch" /> 
-
+       android:id="@+id/switch_sdn"
+       style="?android:attr/listSeparatorTextViewStyle"
+       android:layout_width="match_parent"
+       android:layout_height="50dp"
+       android:layout_below="@id/introduction"
+       android:layout_margin="10sp"
+       android:checked="false"
+       android:onClick="onSwitchSDNClicked"
+       android:switchTextAppearance="@style/SwitchTextAppearance"
+       android:text="@string/sdn_control_switch_message"
+       android:textColor="@android:color/black"
+       android:thumb="@drawable/custom_switch" />
 	
      <TextView
          android:id="@+id/ScanResultList"
          android:layout_width="match_parent"
          android:layout_height="wrap_content"
-         android:layout_alignLeft="@+id/switch_wifi_scan"
+         android:layout_below="@id/switch_sdn"
          android:layout_alignParentBottom="true"
-         android:layout_alignRight="@+id/switch_wifi_handover"
-         android:layout_below="@+id/switch_wifi_handover"
          android:layout_margin="10sp"
          android:text="" />
 

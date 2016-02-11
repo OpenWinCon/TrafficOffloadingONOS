@@ -43,18 +43,12 @@ public final class R {
     }
     public static final class id {
         public static final int ScanResultList=0x7f0b0002;
-        public static final int action_settings=0x7f0b0007;
-        public static final int button_download=0x7f0b0006;
-        public static final int button_download_introduction=0x7f0b0005;
+        public static final int action_settings=0x7f0b0003;
         public static final int introduction=0x7f0b0000;
         public static final int switch_sdn=0x7f0b0001;
-        public static final int switch_wifi_handover=0x7f0b0004;
-        public static final int switch_wifi_scan=0x7f0b0003;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;
-        public static final int activity_main2=0x7f030001;
-        public static final int activity_main3=0x7f030002;
     }
     public static final class menu {
         public static final int main=0x7f0a0000;
