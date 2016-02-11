@@ -119,7 +119,7 @@ public class TrafficMonCommand extends AbstractShellCommand {
 			if (arg1 != null) {
 				if (!map.containsKey(arg1)) {
 					print("fail to find client");
-					return;
+					return;    
 				}
 				else
 				{	
