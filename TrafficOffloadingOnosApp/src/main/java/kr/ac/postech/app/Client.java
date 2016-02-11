@@ -69,18 +69,14 @@ public class Client implements Comparable<Object> {
 				log.info("packet send to " + this.ipAddress + " " + this.clientPort);
 				try {
 					DatagramSocket socket = new DatagramSocket();
-	                InetAddress clientAddress = InetAddress.getByName("10.1.100.11");
 	         
-	                DatagramPacket packet2 = new DatagramPacket(buf, buf.length, this.ipAddress, 1622);
 	                
                     final byte[] buf2 = new byte[1280];
-                   // System.arraycopy("scan".getBytes(), 0, buf2, 0, "scan".getBytes().length);
                     System.arraycopy(buf, 0, buf2, 0, buf.length);
-               //     int l = receiveData.length;
-                    DatagramPacket packet3 = new DatagramPacket(buf2, buf2.length, clientAddress, 1622);
+                    DatagramPacket packet3 = new DatagramPacket(buf2, buf2.length, this.ipAddress, 1622);
 	             
-	                socket.send(packet3);
-	                log.info("Client: dump packet send to " + packet2.getAddress() + " " + packet2.getPort());//+"  "+socket.getInetAddress()+":"+socket.getPort());
+	                agentSocket.send(packet3);
+	                log.info("send to " + packet3.getAddress() + " " + packet3.getPort());
 	                socket.close();
 	                //DatagramPacket packet = new DatagramPacket(receivedPacket.getData(), receivedPacket.getLength(), receivedPacket.getAddress(), receivedPacket.getPort());
 	                
