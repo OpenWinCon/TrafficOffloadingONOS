@@ -36,17 +36,19 @@ public class TrafficMonCommand extends AbstractShellCommand {
     //@Argument(index = 1, name = "APID", description = "Device ID of switch", required = false, multiValued = false)
     //private String APID = null;
 
-    @Argument(index = 1, name = "AP capacity or arg1", description = "Capacity of AP", required = false, multiValued = false)
+    @Argument(index = 1, name = "arg1", description = "client id Capacity of AP", required = false, multiValued = false)
     private String arg1 = null; 
-    @Argument(index = 2, name = "APId", description = "APt ID to connect", required = false, multiValued = false)
-	private String APId = null;
-	@Argument(index = 3, name = "APpw", description = "APt PW to connect", required = false, multiValued = false)
-	private String APpw = null;
-
+    @Argument(index = 2, name = "arg2", description = "AP ID, Device ID", required = false, multiValued = false)
+	private String arg2 = null;
+	@Argument(index = 3, name = "arg3", description = "AP PW, AP SSID", required = false, multiValued = false)
+	private String arg3 = null;
+	@Argument(index = 4, name = "arg4", description = "AP BSSID", required = false, multiValued = false)
+	private String arg4 = null;
 
     private TrafficMonService service;
 	private AppService conService;
 	private ConcurrentMap<String, Client> map;
+	private ConcurrentMap<String, AP> DeviceAPmap;
     private int capacity;
 
     @Override
@@ -56,10 +58,21 @@ public class TrafficMonCommand extends AbstractShellCommand {
         
         conService = get(AppService.class);
 		map = conService.getMap();
+		DeviceAPmap = conService.getDeviceAPMap();
 		if (trafficMonCommand.equals("client")) {
 			for (String devId : map.keySet()) {
 				print(devId);
 			}
+
+		} else if (trafficMonCommand.equals("add")&&arg1.equals("AP")) {
+				/*
+				 * arg2:deviceId(switch)
+				 * arg3:AP SSID
+				 * arg4:AP BSSID
+				*/
+				DeviceAPmap.put(arg2, new AP(arg2, arg3, arg4,(long)0) );
+
+				// if arg1 don't match any registered Clients then print all registered Clients
 
 		} else if (trafficMonCommand.equals("scan")) {
 			if (arg1 != null) {
@@ -86,7 +99,8 @@ public class TrafficMonCommand extends AbstractShellCommand {
 				Client clt = map.get(arg1);
 				Map<String, Integer> apMap = clt.getSignalInfo();
 				Map<String, String> apMap2 = clt.getAPInfo();
-
+				
+				print(""+clt.getNumOfAP());
 				for (String ap : apMap.keySet()) {
 					print("SSID: " + apMap2.get(ap) + "\tBSSID: " + ap + "\tSignalStrength:" + apMap.get(ap));
 				}
@@ -101,18 +115,19 @@ public class TrafficMonCommand extends AbstractShellCommand {
 				}
 				Client clt = map.get(arg1);
 				Map<String, String> apMap2 = clt.getAPInfo();
-				String message = "switch"+"|"+apMap2.get(APId);
-				if (APId != null) {
-					message = message + "|" + APId;
+				String message = "switch"+"|"+apMap2.get(arg2);
+				print("Send messente to client to swich AP  "+message);
+				if (arg2 != null) {
+					message = message + "|" + arg2;
 				}
-				if (APpw != null) {
-					message = message + "|" + APpw;
+				if (arg3 != null) {
+					message = message + "|" + arg3;
 				}else
 				{
 					message = message + "| |";
 				}
 				clt.send(message);
-				//print("Send messente to client to swich AP  "+message);
+				print("Send messente to client to swich AP  "+message);
 			}
 
 		} else if (trafficMonCommand.equals("disconnect")) {

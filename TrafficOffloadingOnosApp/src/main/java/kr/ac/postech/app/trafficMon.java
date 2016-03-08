@@ -104,18 +104,17 @@ public class trafficMon implements AppService, TrafficMonService {
                 byteTxSum += port.bytesSent();
             }
             	DeviceAPMap.get(device.id().toString()).setTraffic(byteTxSum);
-          //   	System.out.println("deviceID: " + device.id() + "\tbyteTxSum: " + byteTxSum); //DeviceAPMap.get(device.id().toString()).getTraffic());//byteTxSum);   // + "\tdurationSec: " + port.durationSec());
-          //  	System.out.println("current traffic: " + (double) byteTxSum * 8 /1024 / 1024 + " (Mbps)\tcapacity: " + capacity);
+            	//System.out.println("deviceID: " + device.id() + "\tbyteTxSum: " + byteTxSum); //DeviceAPMap.get(device.id().toString()).getTraffic());//byteTxSum);   // + "\tdurationSec: " + port.durationSec());
+            	//System.out.println("current traffic: " + (double) byteTxSum * 8 /1024 / 1024 + " (Mbps)\tcapacity: " + capacity);
             if ((double) byteTxSum * 8 /1024 / 1024 < capacity)
             {
-         //   	System.out.println("capacity is not exceed.");
+            	//System.out.println("capacity is not exceed.");
             }
             else
             {
-           // 	System.out.println("capacity is exceed.");
+            	//System.out.println("capacity is exceed.");
             	TrafficMonSwitchAP();
             }
-
             //System.out.println("traffics: " + deviceService.getPortDeltaStatistics(device.id()));
         }
 
@@ -123,10 +122,8 @@ public class trafficMon implements AppService, TrafficMonService {
     
     private void enrollAP()
     {
-    	String device1="of:0000b827ebf0fd40";
-    	String device2="of:0000b827eb248291";
-    	DeviceAPMap.put(device1, new AP(device1, "OPENWINCON","00:26:66:4e:df:b5", (long)0) );
-    	DeviceAPMap.put(device2, new AP(device1, "MCNLONOS","00:26:66:42:4a:a5",(long)0) );
+    	;
+
     }
     private void TrafficMonSwitchAP()
     {
@@ -136,7 +133,6 @@ public class trafficMon implements AppService, TrafficMonService {
     	//find target AP that have less traffic than cacacity
 		for (String deviceId : DeviceAPMap.keySet()) {  //find candidate AP
 			curAPAgent = DeviceAPMap.get(deviceId);
-	//		System.out.println("find TrafficMon swich AP "+deviceId+", " +curAPAgent.getSSID());
 			log.info("find TrafficMon swich AP "+deviceId+", " +curAPAgent.getSSID());
 			if(canAPAgent==null)
 			{
@@ -148,9 +144,6 @@ public class trafficMon implements AppService, TrafficMonService {
 				if(curAPAgent.getTraffic()<canAPAgent.getTraffic())
 					canAPAgent=curAPAgent;
 			}
-			
-	//		String 
-		//	print("SSID: " + DeviceAPMap.get(deviceId) + "\tBSSID: " + ap + "\tSignalStrength:" + apMap.get(ap));
 		}
 		if(curAPAgent==null)
 			log.info("select TrafficMon target AP fail");
@@ -177,7 +170,6 @@ public class trafficMon implements AppService, TrafficMonService {
 				}
 				System.out.println("TrafficMon Offloading from "+ curAPAgent.getSSID() +" to "+canAPAgent.getSSID());
 				clt.send(message);
-		//		System.out.println("start TrafficMon swich AP "+message);
 				log.info("TrafficMon swich AP  "+message);
 			}
 
@@ -189,6 +181,11 @@ public class trafficMon implements AppService, TrafficMonService {
 	public ConcurrentMap<String, Client> getMap() {
 		// TODO Auto-generated method stub
 		return clientsMap;
+	}
+	@Override
+	public ConcurrentMap<String, AP> getDeviceAPMap() {
+		// TODO Auto-generated method stub
+		return DeviceAPMap;
 	}
 	
 
@@ -213,22 +210,7 @@ public class trafficMon implements AppService, TrafficMonService {
                 case DEVICE_AVAILABILITY_CHANGED:
                     if (deviceService.isAvailable(event.subject().id())) {
                         log.info("Device connected {}", event.subject().id());
-                        //if (event.subject().id().equals(deviceId)) {
-                        //processIntfFilters(true, interfaceService.getInterfaces());
-
-                            /* For test only - will be removed before Cardinal release
-                            delay(1000);
-                            FibEntry fibEntry = new FibEntry(Ip4Prefix.valueOf("10.1.0.0/16"),
-                                    Ip4Address.valueOf("192.168.10.1"),
-                                    MacAddress.valueOf("DE:AD:BE:EF:FE:ED"));
-                            FibUpdate fibUpdate = new FibUpdate(FibUpdate.Type.UPDATE, fibEntry);
-                            updateFibEntry(Collections.singletonList(fibUpdate));
-                            */
-                        //}
-
-                        //if (event.subject().id().equals(ctrlDeviceId)) {
-                        //    connectivityManager.notifySwitchAvailable();
-                        //}
+                        
                     }
                     break;
 
@@ -261,7 +243,7 @@ public class trafficMon implements AppService, TrafficMonService {
 	        log.info("Client message from " + agentAddr.getHostAddress() + ": " + agentPort + " - " + clientMac);
 
 	        if (clientsMap.containsKey(clientMac)) {
-	            clientsMap.remove(clientMac);
+	            clientsMap.get(clientMac).setIpAddress(agentAddr, agentPort, controllerSocket);;
 	        }
 	        if (!clientsMap.containsKey(clientMac)) {
 	            clientsMap.put(clientMac, new Client(clientMacAddr, agentAddr, agentPort, controllerSocket));

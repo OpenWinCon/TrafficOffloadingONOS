@@ -35,15 +35,15 @@ public class Client implements Comparable<Object> {
 	int clientPort;
 	private long lastRecvTime = 0;
 	private int apScanningTime = 0;
-
-	private DatagramSocket agentSocket;
+	private int numOfAp = 0;
+	private DatagramSocket clientSocket;
 
 	
-	public Client(String hwAddress, InetAddress ipAddress, int clientPort, DatagramSocket agentSocket) {
+	public Client(String hwAddress, InetAddress ipAddress, int clientPort, DatagramSocket clientSocket) {
 		this.hwAddress = MacAddress.valueOf(hwAddress);
 		this.ipAddress = ipAddress;
 		this.clientPort = clientPort;
-		this.agentSocket = agentSocket;
+		this.clientSocket = clientSocket;
 
 
 	}
@@ -64,7 +64,7 @@ public class Client implements Comparable<Object> {
                     System.arraycopy(buf, 0, buf2, 0, buf.length);
                     DatagramPacket packet3 = new DatagramPacket(buf2, buf2.length, this.ipAddress, 1622);
 	             
-	                agentSocket.send(packet3);
+                    clientSocket.send(packet3);
 	                log.info("send to " + packet3.getAddress() + " " + packet3.getPort());
 	                socket.close();
 	                //DatagramPacket packet = new DatagramPacket(receivedPacket.getData(), receivedPacket.getLength(), receivedPacket.getAddress(), receivedPacket.getPort());
@@ -78,8 +78,10 @@ public class Client implements Comparable<Object> {
 	}
 
 
-	public void setIpAddress(InetAddress addr) {
-		this.ipAddress = addr;
+	public void setIpAddress(InetAddress ipAddress, int clientPort, DatagramSocket clientSocket) {
+		this.ipAddress = ipAddress;
+		this.clientPort = clientPort;
+		this.clientSocket = clientSocket;
 	}
 
 	public void setIpAddress(String addr) throws UnknownHostException {
@@ -97,8 +99,12 @@ public class Client implements Comparable<Object> {
 	public Map<String, String> getAPInfo() {
 		return apMap;
 	}
+	public int getNumOfAP() {
+		return numOfAp;
+	}
 
 	public synchronized void updateSignalInfo(String[] fields) {
+		numOfAp=fields.length;
 	
 		for (int i = 0; i < fields.length; i++) {
 
@@ -109,6 +115,8 @@ public class Client implements Comparable<Object> {
 				int level = Integer.parseInt(info[2]);
 				apMap.put(bssid, ssid);
 				apSignalLevelMap.put(bssid, level);
+				//System.out.println(apMap.get(bssid)+" "+apSignalLevelMap.get(bssid));
+
 			}
 		}
 
