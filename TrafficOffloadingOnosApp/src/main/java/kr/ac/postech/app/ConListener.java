@@ -61,6 +61,7 @@ class ConListener implements Runnable {
                 final byte[] receiveData = new byte[1280]; // probably this could be smaller
                 DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
                 controllerSocket.receive(receivedPacket);
+                log.info("packet receive from ");
                 log.info("packet receive from "+ receivedPacket.getAddress());
                            
                 executor.execute(new ConnectionHandler(receivedPacket));
@@ -86,8 +87,8 @@ class ConListener implements Runnable {
     /** Protocol handlers **/
 
     private void receiveClientInfo(final InetAddress agentAddr,
-            final int agentPort, final String clientMacAddr) {
-            master.receiveClientInfo(agentAddr, agentPort, clientMacAddr, controllerSocket);
+            final int agentPort, final String clientMacAddr, final String ConnectedAP) {
+            master.receiveClientInfo(agentAddr, agentPort, clientMacAddr, ConnectedAP, controllerSocket);
     }
 
 
@@ -118,6 +119,7 @@ class ConListener implements Runnable {
                 final int agentPort = receivedPacket.getPort() /*fields[1]*/;
                 final String clientMacAddr = fields[1];
                 String clientIP = fields[2];
+                String ConnectedAP = fields[3];
                 log.info("find public ap/private ap(0)="+agentAddr+", "+fields[2]);
                 
                 String[] ipfields = clientIP.split("\\.");
@@ -132,10 +134,10 @@ class ConListener implements Runnable {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-                	receiveClientInfo(clip, agentPort, clientMacAddr);
+                	receiveClientInfo(clip, agentPort, clientMacAddr,ConnectedAP);
                 }
                 else
-                	receiveClientInfo(agentAddr, agentPort, clientMacAddr);
+                	receiveClientInfo(agentAddr, agentPort, clientMacAddr,ConnectedAP);
                 log.info("receive client info");
                 
             } else if (msg_type.equals(MSG_CLIENT_DISCONNECT)) {

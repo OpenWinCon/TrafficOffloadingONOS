@@ -36,7 +36,7 @@ public class TrafficMonCommand extends AbstractShellCommand {
     //@Argument(index = 1, name = "APID", description = "Device ID of switch", required = false, multiValued = false)
     //private String APID = null;
 
-    @Argument(index = 1, name = "arg1", description = "client id Capacity of AP", required = false, multiValued = false)
+    @Argument(index = 1, name = "arg1", description = "client id, Capacity of AP", required = false, multiValued = false)
     private String arg1 = null; 
     @Argument(index = 2, name = "arg2", description = "AP ID, Device ID", required = false, multiValued = false)
 	private String arg2 = null;
@@ -64,16 +64,15 @@ public class TrafficMonCommand extends AbstractShellCommand {
 				print(devId);
 			}
 
-		} else if (trafficMonCommand.equals("add")&&arg1.equals("AP")) {
+		} else if (trafficMonCommand.equals("add_ap")) {
 				/*
-				 * arg2:deviceId(switch)
-				 * arg3:AP SSID
-				 * arg4:AP BSSID
+				 * arg1:AP ovs mac
+				 * arg2:AP SSID
+				 * arg3:AP BSSID
 				*/
-				DeviceAPmap.put(arg2, new AP(arg2, arg3, arg4,(long)0) );
-
-				// if arg1 don't match any registered Clients then print all registered Clients
-
+				String port_ovs="of:0000"+ arg1.replace(":","").toLowerCase();
+				DeviceAPmap.put(port_ovs, new AP(port_ovs/*"b8:27:eb:28:21:3d"*/, arg2/*"mcnlonos"*/, arg3/*bssid"*/,(long)0) );
+    			//DeviceApSSIDMap.put(arg3/*"mcnlonos"*/,DeviceAPMap.get(arg2/*device.id().toString()*/));
 		} else if (trafficMonCommand.equals("scan")) {
 			if (arg1 != null) {
 				if (!map.containsKey(arg1)) {
@@ -81,12 +80,9 @@ public class TrafficMonCommand extends AbstractShellCommand {
 					return;
 				}
 				map.get(arg1).send("scan");
-
-				// if arg1 don't match any registered Clients then print all registered Clients
 			} else {
 				for (String devId : map.keySet()) {
 					print(devId);
-					// a client
 				}
 			}
 		} else if (trafficMonCommand.equals("output")) {
@@ -147,9 +143,7 @@ public class TrafficMonCommand extends AbstractShellCommand {
 
 		}
         if(trafficMonCommand.equals("get")){
-        	if(arg1==null)
-        		capacity=0;
-            print("capacity: " + capacity);
+                  print("capacity: " + service.getCapacity());
         }
         else if (trafficMonCommand.equals("set")){
         	capacity=Integer.parseInt(arg1);
