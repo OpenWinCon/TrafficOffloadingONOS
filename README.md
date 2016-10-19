@@ -33,7 +33,7 @@ ONOS SDN 컨트롤러 관리자는 ONOS 트래픽 오프로딩 어플리케이�
 <br />ONOS controller에 관리될 ap 정보 등록 
 
 ##2. ONOS 트래픽 오프로딩 어플리케이션 설치 및 설정
-ONOS에 트래픽 오프로딩 기능을 추가하기 위해 본 연구를 통해 개발된 ONOS 트래픽 오프로딩 어플리케이션을 설치해야 합니다. 프로그램은 GitHub을 통해 공개하고 있으며 다음과 같음 절차를 토앻 설치 할 수 있습니다.
+ONOS에 트래픽 오프로딩 기능을 추가하기 위해 본 연구를 통해 개발된 ONOS 트래픽 오프로딩 어플리케이션을 설치해야 합니다. 프로그램은 GitHub을 통해 공개하고 있으며 다음과 같 설치 할 수 있습니다.
 
 0. ONOS 설치 및 실행
  <br />본 프로그램은 SDN 컨트롤러 중 하나인 ONOS를 사용하였습니다. 설치 파일은 https://wiki.onosproject.org/display/ONOS/Download+packages+and+tutorial+VMs 에서 제공하고 있으며, https://wiki.onosproject.org/display/ONOS/Installing+and+Running+ONOS 에서 설치 및 실행 방법을 설명하고 있습니다.
