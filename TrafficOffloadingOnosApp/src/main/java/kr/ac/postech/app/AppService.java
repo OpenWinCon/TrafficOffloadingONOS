@@ -8,4 +8,5 @@ import org.onosproject.net.DeviceId;
 public interface AppService {
     public ConcurrentMap<String, Client> getMap();
     public ConcurrentMap<String, AP> getDeviceAPMap();
+    public void showAPtraffic(boolean showFlag);
 }

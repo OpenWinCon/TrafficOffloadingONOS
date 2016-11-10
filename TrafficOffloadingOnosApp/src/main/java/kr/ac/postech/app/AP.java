@@ -19,12 +19,16 @@ public class AP {
 	private String SSID;
 	private String BSSID;
 	private String DeviceID;
-	private Map<String, Long> conncetedClients;  //BSSID of Client Objecet, cumbyte
+	private Map<String, Long> conncetedClients;  //client mac, cumbyte
+	private Map<String, Double> conncetedClientsBW;  //client mac, bw
 	private Queue<Long> slicingWindow;
 	private List<Object> slicingWindowList;  
     private long startTime;
+    private String stat;
+
     
     public int WINDOW_SIZE=3;
+    public boolean trafficShowFlag;
 
 
 	private long avgTraffic;
@@ -37,13 +41,16 @@ public class AP {
 		this.BSSID = BSSID;
 		fileName="/home/offloading/hyunmin/"+BSSID+".txt";
 		conncetedClients = new ConcurrentHashMap<String/*client's BSSID*/, Long/* Client Object*/>();
+		conncetedClientsBW = new ConcurrentHashMap<String/*client's BSSID*/, Double/* Client Object*/>();
 		totalCumByte=(long) 0;
 		slicingWindow = new LinkedList<Long>();
 		slicingWindowList= new ArrayList<>();
 		avgTraffic=0;
 	    startTime=System.currentTimeMillis();
-
+	    trafficShowFlag=false;
+	    stat="";
 	}
+	
 	
 	public void setTraffic(long byteTxSum)
 	{
@@ -72,7 +79,7 @@ public class AP {
 		
 		String trafficInfo=null;
 		trafficInfo="Time: "+(System.currentTimeMillis()-startTime)/1000.0f+"\tcurTraffic: "+(double)traffic * 8 /1024 / 1024+"Mbps"+"\tavgWindowTraffic: "+(double)avgTraffic* 8 /1024 / 1024+"Mbps";
-		writeTraffic(trafficInfo);		
+		//writeTraffic(trafficInfo);		
 		
 		return slicingWindowList.size();
 	}
@@ -99,6 +106,15 @@ public class AP {
 	public int  getNumClients()
 	{
 		return conncetedClients.size();
+	}
+	public void  removeNumClients(String clt_mac)
+	{
+		conncetedClients.remove(clt_mac);
+	}
+	
+	public void  resetAllClientsFlowBWInfo()
+	{
+		conncetedClientsBW.clear();
 	}
 	
 	 public static <K, V extends Comparable<? super V>> Map<K, V> 
@@ -146,11 +162,19 @@ public class AP {
 		totalCumByte=sumTraffic;
 		return disbyte;
 	}
+	
+	public Double getTotalFlowTotalBW(){
+		double totalBW=0.0;
+		for (String clientId : conncetedClientsBW.keySet())
+		{
+			totalBW=totalBW+conncetedClientsBW.get(clientId);
+		}
+		return totalBW;
+	}
 	 
 	public void parsingClientsInfo(String info)
 	{
 		String msg = info.trim().toLowerCase();
-
 		msg = msg.replace("[", "");
 		msg = msg.replace("]", "");
 
@@ -171,38 +195,54 @@ public class AP {
         	else if(fields[i].matches(".*eth_dst:.*"))
         	{
         		clientBSSID=fields[i].replace("eth_dst:", "").trim();
-        		//System.out.println("find client mac "+clientBSSID);
         	}
         	temp=temp+"|"+fields[i];
         }
-        //System.out.println(temp);
         if(clientBSSID!=null)
         {
         	String trafficInfo=null;
-        	if(conncetedClients.containsKey(clientBSSID)&&conncetedClients.get(clientBSSID)!=0)
+        	double bw=0;
+        	
+        
+        	if(conncetedClients.containsKey(clientBSSID)&&conncetedClients.get(clientBSSID)!=0&&cumByte-conncetedClients.get(clientBSSID)>=0)
         	{
-        		trafficInfo="Mobile device: "+clientBSSID+" cumByte : "+cumByte+" MBps : "+(double)(cumByte-conncetedClients.get(clientBSSID))/1024 / 1024 /10;
-        		System.out.println("Mobile device: "+clientBSSID+" cumByte : "+cumByte+" MBps : "+(double)(cumByte-conncetedClients.get(clientBSSID))/1024 / 1024 /10); //* 8 /1024 / 1024
-        	}
+        		
+        		trafficInfo="Mobile device: "+clientBSSID+"\tCurrent Traffic: "+String.format("%.2f",(double) (cumByte-conncetedClients.get(clientBSSID)) * 8 /1024 / 1024/5) +" (Mbps)";//(float)(cumByte-conncetedClients.get(clientBSSID))*8/1024 / 1024 /5;
+        		bw=(double)(cumByte-conncetedClients.get(clientBSSID)) * 8 /1024 / 1024/5;
+        		//System.out.println("Mobile device: "+clientBSSID+" cumByte : "+cumByte+" MBps : "+(double)(cumByte-conncetedClients.get(clientBSSID))/1024 / 1024 /5); //* 8 /1024 / 1024
+            }
         	else
         	{
-        		trafficInfo="Mobile device: "+clientBSSID+" cumByte : "+cumByte+" MBps : "+(double)(cumByte)/1024 / 1024 /10;
-        		System.out.println("Mobile device: "+clientBSSID+" cumByte : "+cumByte+" MBps : "+(double)(cumByte)/1024 / 1024 /10);
+        		trafficInfo="Mobile device: "+clientBSSID+"\tCurrent Traffic: "+String.format("%.2f",(double) (cumByte)*8/1024 / 1024 /5)+" (Mbps)";
+        		bw=(double) (cumByte)*8/1024 / 1024 /5;
+        		//System.out.println("Mobile device: "+clientBSSID+" cumByte : "+cumByte+" MBps : "+(double)(cumByte)/1024 / 1024 /5);
         	}
-        		
-        	if(trafficInfo!=null)
-        		writeTraffic(trafficInfo);
-
+        	stat=stat+"\n"+trafficInfo;
         	conncetedClients.put(clientBSSID, cumByte);
+        	conncetedClientsBW.put(clientBSSID, bw);
         }
       
+	}
+	public String getStat()
+	{
+		String output="Aceess Point : "+BSSID+"\tCurrent Traffic: "+String.format("%.2f",(double) (getTotalFlowTotalBW()))+" (Mbps)"+stat;
+		stat="";
+		return output;
+	}
+	public void resetStat()
+	{
+		stat="";
+		getTotalPortCumByte();
 	}
 	public void updateTraffic()
 	{
 	
 	}
-	
-	public void writeTraffic(String traffic)
+	public void showTraffic(boolean flag)
+	{
+		trafficShowFlag=flag;
+	}
+/*	public void writeTraffic(String traffic)
 	{
 		File file=new File(fileName);
 		FileWriter fw;
@@ -216,7 +256,7 @@ public class AP {
 			e.printStackTrace();
 		}
 		
-	}
+	}*/
 
 	public void resetTrafficSilingWindow() {
 		// TODO Auto-generated method stub

@@ -42,18 +42,19 @@ class ConListener implements Runnable {
        // this.controllerSocket=controllerSocket;
         
     }
-
+/*    public void finalize()
+    {
+    	
+    }
+*/
     @Override
     public void run() {
         try {
         	controllerSocket = new DatagramSocket(SERVER_PORT);
-            //controllerSocket = new DatagramSocket(null);
-            //InetSocketAddress address= new InetSocketAddress("141.223.107.139", SERVER_PORT);
-            //controllerSocket.bind(address);
         } catch (IOException e) {
         	log.info("create new controllerSocket fail: " + SERVER_PORT);
             e.printStackTrace();
-        }
+        } 
 
         log.info("--------------Start APManger--------------");
         while(ServerStarted/*!Thread.interrupted()*/){
@@ -71,7 +72,8 @@ class ConListener implements Runnable {
           
             	log.info("controllerSocket.accept() failed: " + SERVER_PORT);
             	ServerStarted=false;
-                e.printStackTrace();
+            	
+                //e.printStackTrace();
             
             } 
         }

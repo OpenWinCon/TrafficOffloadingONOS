@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!--
-  ~ Copyright 2015-2016 Open Networking Laboratory
+  ~ Copyright 2015 Open Networking Laboratory
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<app name="kr.ac.postech.app" origin="MCNL" version="1.0-SNAPSHOT"
-        title="Offloading App" category="default" url="http://mcnl.postech.ac.kr"
-        featuresRepo="mvn:kr.ac.postech/TrafficMon/1.0-SNAPSHOT/xml/features"
-        features="TrafficMon" apps="">
-    <description>ONOS OSGi bundle archetype.</description>
-    <artifact>mvn:kr.ac.postech/TrafficMon/1.0-SNAPSHOT</artifact>
-</app>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.2.0" name="TrafficMon-1.0-SNAPSHOT">
+    <feature name="TrafficMon" version="1.0-SNAPSHOT"
+             description="ONOS OSGi bundle archetype.">
+        <feature>onos-api</feature>
+        <bundle>mvn:kr.ac.postech/TrafficMon/1.0-SNAPSHOT</bundle>
+    </feature>
+</features>

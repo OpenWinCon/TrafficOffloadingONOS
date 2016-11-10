@@ -18,7 +18,7 @@ package kr.ac.postech.app;
 import org.apache.felix.scr.annotations.*;
 import org.onlab.packet.MacAddress;
 import org.onlab.util.SharedExecutors;
-import org.onosproject.cli.Comparators;
+import org.onosproject.utils.Comparators;
 import org.onosproject.core.CoreService;
 import org.onosproject.net.Device;
 import org.onosproject.net.device.DeviceEvent;
@@ -30,12 +30,18 @@ import org.onosproject.net.flow.FlowRuleService;
 import org.onosproject.net.flow.TrafficSelector;
 import org.onosproject.net.flow.criteria.Criterion;
 import org.onosproject.net.flow.criteria.Criterion.Type;
+
+
+
 import org.onlab.osgi.DefaultServiceDirectory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Arrays;
@@ -62,6 +68,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import static com.google.common.collect.Lists.newArrayList;
 
 
+
+
 /**
  * Skeletal ONOS application component.
  */
@@ -72,13 +80,15 @@ public class trafficMon implements AppService, TrafficMonService {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private ThreadPoolExecutor conExecutor ;
-    private ConcurrentMap<String, Client> clientsMap; /*<switch(ap) <client, scan>*/
+    private ConcurrentMap<String, Client> clientsMap; /* <mac, Client>*/
     private ConcurrentMap<Client,String> ClienConnetedAPMap; /* SSID of Connected AP, Client*/
     private ConcurrentMap<String, AP> DeviceAPMap; /*<DeviceId, BSSID(AP)>*/
     private ConcurrentMap<String, AP> DeviceApSSIDMap; /*<SSID, AP>*/
 
     private HashMap<String, Long> ApTrafficMap;
     DatagramSocket curControllerSocket=null;
+    private boolean countOnly = false;
+    private boolean showON;
     
     private static final Predicate<FlowEntry> TRUE_PREDICATE = f -> true;
     private Predicate<FlowEntry> predicate = TRUE_PREDICATE;
@@ -107,12 +117,13 @@ public class trafficMon implements AppService, TrafficMonService {
         DeviceAPMap = new ConcurrentHashMap<String, AP>();
         ClienConnetedAPMap = new ConcurrentHashMap<Client, String>();
         DeviceApSSIDMap = new ConcurrentHashMap<String, AP>();
-        System.out.println("device number: " + deviceService.getDeviceCount());
         executor.scheduleAtFixedRate(this::trafficMonitoring, 1, 5, TimeUnit.SECONDS); 
         
         conExecutor= (ThreadPoolExecutor)Executors.newCachedThreadPool();
         conExecutor.execute(new ConListener(this, 1622, conExecutor));
-
+        showON=false; 
+        
+        
         
     }
     @Deactivate
@@ -121,7 +132,7 @@ public class trafficMon implements AppService, TrafficMonService {
         executor.shutdown();
         if(curControllerSocket!=null&&curControllerSocket.isClosed()==false)
         	curControllerSocket.close();
-        conExecutor.shutdown();
+        conExecutor.shutdownNow();
         
     }
 
@@ -132,38 +143,56 @@ public class trafficMon implements AppService, TrafficMonService {
 
         log.info("start traffic monitoring");
         
+        SortedMap<Device, List<FlowEntry>> flows = getSortedFlows(deviceService, flowRuleService, coreService);       
+        flows.forEach((device2, flow) -> printFlows(device2, flow, coreService));
+        
         boolean onOffloading=false;
-        for (Device device : devices) {
-            List<PortStatistics> ports = deviceService.getPortDeltaStatistics(device.id());
-                 
-            long traffic=0;//(port.bytesSent()+port.bytesReceived())/port.durationSec();
-            for (PortStatistics port : ports)
-            {
-                traffic=(port.bytesReceived())/port.durationSec();
-            }
-            AP targetAP;
-            if(DeviceAPMap.get(device.id().toString())!=null)
-            {
-            	  targetAP=DeviceAPMap.get(device.id().toString());
-            	  targetAP.setTraffic(traffic);
-            	  int sizeOfWindow=targetAP.addTrafficSilingWindow(traffic);
-                  
-                  ApTrafficMap.put(device.id().toString(),targetAP.getAvgTrafficSlidingWindow());
-                  
-                  System.out.println("deviceID: " + device.id() + "current traffic: " + String.format("%.2f",(double) traffic * 8 /1024 / 1024)+"\taverage traffic: " +  String.format("%.2f",(double) targetAP.getAvgTrafficSlidingWindow() * 8 /1024 / 1024)  + " (Mbps)\tcapacity: " + capacity);
+        if(showON==true)
+        {
+        	try {
+		           Runtime runtime = Runtime.getRuntime();
+		           Process process = runtime.exec("clear");
+		           InputStream is = process.getInputStream();
+		           InputStreamReader isr = new InputStreamReader(is);
+		           BufferedReader br = new BufferedReader(isr);
+		           String line;
+		           while((line = br.readLine()) != null) {
+		                 System.out.println(line);
+		           }
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	        for (Device device : devices) {
+	        	 AP targetAP=DeviceAPMap.get(device.id().toString());
+	             if(targetAP!=null)
+	             {
 
-                  if ((double) targetAP.getAvgTrafficSlidingWindow() * 8 /1024 / 1024 > capacity && sizeOfWindow==targetAP.WINDOW_SIZE)
-                  {
-                  	System.out.println("capacity is exceed.");
-                  	onOffloading=true;
-                  }
-            }
 
+	            	System.out.println();
+	            	System.out.println(targetAP.getStat());
+                    ApTrafficMap.put(device.id().toString(), targetAP.getTotalFlowTotalBW().longValue());
+
+	            	
+	                if (targetAP.getTotalFlowTotalBW()>capacity)
+	                {
+	                 	System.out.println("\ncapacity is exceed.");
+	                 	onOffloading=true;
+	                }
+                 	targetAP.resetAllClientsFlowBWInfo();
+
+	            	
+	             }
+	        }
         }
-        System.out.println("");
+        
+
         if(onOffloading==true)
         	TrafficMonSwitchAP();
         onOffloading=false;
+        
+
+        
     }
        
     /**
@@ -173,43 +202,50 @@ public class trafficMon implements AppService, TrafficMonService {
      * @param service flow rule service
      * @return sorted device list
      */
+  
     protected SortedMap<Device, List<FlowEntry>> getSortedFlows(DeviceService deviceService,
-                                                          FlowRuleService service) {
-        SortedMap<Device, List<FlowEntry>> flows = new TreeMap<>(Comparators.ELEMENT_COMPARATOR);
-        List<FlowEntry> rules;
-
-        Iterable<Device> devices = null;
-        devices = deviceService.getDevices();
-         
-        for (Device d : devices) {
-            if (predicate.equals(TRUE_PREDICATE)) {
-                rules = newArrayList(service.getFlowEntries(d.id()));
-            } else {
-                rules = newArrayList();
-                for (FlowEntry f : service.getFlowEntries(d.id())) {
-                    if (predicate.test(f)) {
-                        rules.add(f);
-                    }
-                }
-            }
-            rules.sort(Comparators.FLOW_RULE_COMPARATOR);
-            flows.put(d, rules);
-        }
-        return flows;
-    }
+            											FlowRuleService service, CoreService coreService)
+    {
+		SortedMap<Device, List<FlowEntry>> flows = new TreeMap<>(Comparators.ELEMENT_COMPARATOR);
+		List<FlowEntry> rules;
+	
+		Iterable<Device> devices = null;
+		devices = deviceService.getDevices();
+	
+		
+		for (Device d : devices) {
+			if (predicate.equals(TRUE_PREDICATE)) {
+				rules = newArrayList(service.getFlowEntries(d.id()));
+			} else {
+				rules = newArrayList();
+				for (FlowEntry f : service.getFlowEntries(d.id())) {
+					if (predicate.test(f)) {
+						rules.add(f);
+					}
+				}
+			}
+			rules.sort(Comparators.FLOW_RULE_COMPARATOR);
+	
+			flows.put(d, rules);
+		}
+		return flows;
+	}
+    
+    
     
     protected void printFlows(Device d, List<FlowEntry> flows,
             CoreService coreService) {
     	boolean empty = flows == null || flows.isEmpty();
-    	System.out.println("deviceId="+d.id());
-    	if (empty) {
-    		return;
-    	}
+
+
+	    if (empty || countOnly || DeviceAPMap.get(d.id().toString())==null) {
+	         return;
+	    }
 
     	for (FlowEntry f : flows) {
     		if (true) {
     			String flowInfo="byte: "+f.bytes()+ ", packets: "+ f.packets()+", "+f.selector().criteria();
-    			DeviceAPMap.get(d.id().toString()).parsingClientsInfo(flowInfo);
+  			    DeviceAPMap.get(d.id().toString()).parsingClientsInfo(flowInfo);
     		}
     	}
     }
@@ -218,7 +254,7 @@ public class trafficMon implements AppService, TrafficMonService {
     	String tmp=set.toString();
  
         for (Criterion c : set) {
-        	System.out.println(c.type());//+" "+((TrafficSelector) set).getCriterion(c.type()));
+        	System.out.println(c.type());
        
         }   	
     }
@@ -246,14 +282,13 @@ public class trafficMon implements AppService, TrafficMonService {
 	}
 
     
-    private AP ContainAP(String BSSID)
+    private AP getEnrollAP(String BSSID)
     {
     	for (String deviceId : DeviceAPMap.keySet())
     	{
     		if(DeviceAPMap.get(deviceId).getBSSID().equals(BSSID))
     		{
     			
-    			System.out.println(deviceId+ " "+DeviceAPMap.get(deviceId).getBSSID()+ " "+BSSID);
     			return DeviceAPMap.get(deviceId);
     		}
     	}
@@ -270,48 +305,51 @@ public class trafficMon implements AppService, TrafficMonService {
     	long curAPTraffic=0;
     	boolean onOffloading=false;
     	
-    	//decsort by avg slicing window bandwidth
     	ApTrafficMap=(HashMap<String, Long>) sortByValue(ApTrafficMap);  	
     	for (String deviceId : ApTrafficMap.keySet()) {  //find candidate AP
     		curAPTraffic=ApTrafficMap.get(deviceId);
 			curAPAgent = DeviceAPMap.get(deviceId);
-			for(Client client : ClienConnetedAPMap.keySet())
+			
+			HashMap<String, Long> conClient= curAPAgent.sortedConntedClients();
+			for (String clientId : conClient.keySet())
 			{
-				if(ClienConnetedAPMap.get(client).equals(curAPAgent.getSSID()))
+				Client client = clientsMap.get(clientId);
+
+				if(clientsMap.containsKey(clientId)&&ClienConnetedAPMap.get(client).equals(curAPAgent.getSSID()))
 				{
-					System.out.println("\n****************** find current ap "+ClienConnetedAPMap.get(client)+ " "+curAPAgent.getSSID() );
 					Client targetClinet = client;
 					Map<String/*BSSID*/, Integer> clientSignal =targetClinet.getSignalInfo();
 					for (String candidateAPId/*BSSID*/ : clientSignal.keySet())
 					{				
 						String canAPbssid = candidateAPId.trim().toLowerCase();
 						canAPAgent=null;
-						canAPAgent=ContainAP(canAPbssid);
-						
-						Map<String, String> apMap2 = targetClinet.getAPInfo(); /*bssid, ssid*/
-						if(!ClienConnetedAPMap.get(client).equals(apMap2.get(canAPbssid))&&clientSignal.get(candidateAPId)>-80&&canAPAgent!=null&&canAPAgent!=curAPAgent)
+						canAPAgent=getEnrollAP(canAPbssid);
+						if(canAPAgent!=null&&!ClienConnetedAPMap.get(client).equals(canAPAgent.getSSID()))
 						{
-							//System.out.println(ClienConnetedAPMap.get(client)+" "+apMap2.get(canAPbssid)+" "+canAPAgent.getBSSID());
-					        //System.out.println("****************** find target client and ap "+apMap2.get(candidateAPId)+" "+candidateAPId +" !!!"+canAPAgent.getSSID());
-					       				       
-							if(canAPAgent.getAvgTrafficSlidingWindow()* 8 /1024 / 1024 < capacity)
-							{
-								String message = "switch"+"|"+apMap2.get(candidateAPId)/*SSID*/;
-								if (candidateAPId != null) {
-									message = message + "|" +canAPAgent.getBSSID()/*BSSID*/+"| |";// canAPAgent.getBSSID();//canAPAgent.getBSSID();
+												
+							System.out.println("canAPbssid :"+canAPbssid);
+							
+							Map<String, String> apInfo = targetClinet.getAPInfo(); /*bssid, ssid*/			
+							if(clientSignal.get(candidateAPId)>-80&&canAPAgent!=curAPAgent)
+							{     				       
+								if(canAPAgent.getAvgTrafficSlidingWindow()* 8 /1024 / 1024 < capacity)
+								{
+									String message = "switch"+"|"+apInfo.get(candidateAPId)/*SSID*/;
+									if (candidateAPId != null) {
+										message = message + "|" +canAPAgent.getBSSID()/*BSSID*/+"| |";// canAPAgent.getBSSID();//canAPAgent.getBSSID();
+									}
+									System.out.println("TrafficMon Offloading from "+ curAPAgent.getBSSID() +" to "+candidateAPId);
+									targetClinet.send(message);
+									curAPAgent.removeNumClients(curAPAgent.getBSSID());
+									log.info("TrafficMon swich AP  "+message);
+									onOffloading=true;
+									//curAPAgent.resetTrafficSilingWindow();
+	
 								}
-								System.out.println("TrafficMon Offloading from "+ curAPAgent.getBSSID() +" to "+candidateAPId);
-								System.out.println(message);
-								targetClinet.send(message);
-								log.info("TrafficMon swich AP  "+message);
-								onOffloading=true;
-								/*********************** reset sliding window********************/
-								curAPAgent.resetTrafficSilingWindow();
-
 							}
+							if(onOffloading==true)
+								break;
 						}
-						if(onOffloading==true)
-							break;
 					}
 				}
 				if(onOffloading==true)
@@ -418,5 +456,21 @@ public class trafficMon implements AppService, TrafficMonService {
         }
         clt.updateSignalInfo(Arrays.copyOfRange(fields, 3, fields.length - 1));
 	
+	}
+	@Override
+	public void showAPtraffic(boolean showON) {
+		this.showON=showON;
+		Iterable<Device> devices = deviceService.getDevices();
+		 for (Device device : devices)
+		 {
+	        if(DeviceAPMap.get(device.id().toString())!=null)
+	        {
+	        	  AP targetAP=DeviceAPMap.get(device.id().toString());
+	        	  targetAP.resetStat();
+	        }
+			
+		 }
+		// TODO Auto-generated method stub
+				
 	}
 }

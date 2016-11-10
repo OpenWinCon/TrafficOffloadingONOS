@@ -18,7 +18,7 @@ package kr.ac.postech.app;
 import org.apache.karaf.shell.commands.Argument;
 import org.apache.karaf.shell.commands.Command;
 import org.onosproject.cli.AbstractShellCommand;
-
+import org.onosproject.core.CoreService;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -49,6 +49,7 @@ public class TrafficMonCommand extends AbstractShellCommand {
 	private AppService conService;
 	private ConcurrentMap<String, Client> map;
 	private ConcurrentMap<String, AP> DeviceAPmap;
+
     private int capacity;
 
     @Override
@@ -141,7 +142,16 @@ public class TrafficMonCommand extends AbstractShellCommand {
 				}
 			}
 
+		} else if (trafficMonCommand.equals("start"))
+		{
+			conService.showAPtraffic(true);
+
+		} else if (trafficMonCommand.equals("end"))
+		{
+			conService.showAPtraffic(false);
+
 		}
+		
         if(trafficMonCommand.equals("get")){
                   print("capacity: " + service.getCapacity());
         }
